@@ -1,0 +1,20 @@
+fastapi==0.116.1 #	Creates backend API endpoints
+uvicorn[standard]==0.35.0 #Runs your FastAPI application
+jinja2==3.1.6 #	Renders HTML templates
+python-multipart==0.0.20 #Handles file uploads
+pydantic-settings==2.10.1 #Handles file uploads
+
+langgraph==1.1.10 #	Builds agent workflows and routing
+langchain-core==1.6.1 #Core components for LLM applications
+langchain-community==0.4.2 #Integrations with external tools and data sources
+langchain-openai==1.6.0 #Connects to OpenAI models
+langchain-tavily==0.2.18 #	Adds web search capabilities
+langchain-pinecone==0.2.13#	Connects LangChain to Pinecone vector storage
+langchain-text-splitters==1.1.2 #Splits documents into chunks
+
+pinecone==7.3.0 #Stores and searches vector embeddings
+openai==3.3.1 #	Provides the OpenAI API client
+
+pypdf==6.16.2 #Extracts text from PDF documents
+python-docx==1.2.0#Reads and processes Word documents
+python-dotenv==1.1.1 #Loads environment variables from .env
