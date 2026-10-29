@@ -1,4 +1,7 @@
-from app.core.config import get_settings
-settings=get_settings()
+from app.services.ingestion import load_file,chunk_documents
 
-print(f"App Name: {settings.tavily_api_key}")
+from pathlib import Path
+
+docs=load_file(Path("data/sample_kb/company_it_handbook.md"))
+docs=chunk_documents(docs)
+print(len(docs))
