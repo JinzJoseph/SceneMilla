@@ -1,8 +1,10 @@
 import time
 from pinecone import Pinecone , ServerlessSpec
-from langchain_openai import OpenAIEmbeddings, PinconeVectorStore
-from app.core.config import get_settings
 
+from app.core.config import get_settings
+from langchain_openai import OpenAIEmbeddings
+from langchain_pinecone import PineconeVectorStore
+from langchain_huggingface import HuggingFaceEmbeddings
 settings=get_settings()
 
 _embeddings=None
@@ -16,34 +18,47 @@ EMBEDDING_DIMENSIONS={
     "all-minilm-16-v2":384
 }
 
+def get_embedding_dimensions():
+    return 384
 
-def get_embedding_dimensions(model_name:str | None=None)->int:
-    name=(model_name or settings.embedding_model or "").strip()
-    if not name:
-        raise RuntimeError("Embedding model is not configured")
-    normalized=name.lower()
-    if normalized in EMBEDDING_DIMENSIONS:
-        return EMBEDDING_DIMENSIONS[normalized]
-    if "text-embedding-3-small" in normalized:
-        return 1536
-    if "text-embedding-3-large" in normalized:
-        return 3072
-    if "text-embedding-ada-002" in normalized:
-        return 1536
-    if "all-minilm-16-v2" in normalized:
-        return 384
-    raise ValueError(f"Unsupported embedding model: {name}") 
+# def get_embedding_dimensions(model_name:str | None=None)->int:
+#     name=(model_name or settings.embedding_model or "").strip()
+#     if not name:
+#         raise RuntimeError("Embedding model is not configured")
+#     normalized=name.lower()
+#     if normalized in EMBEDDING_DIMENSIONS:
+#         return EMBEDDING_DIMENSIONS[normalized]
+#     if "text-embedding-3-small" in normalized:
+#         return 1536
+#     if "text-embedding-3-large" in normalized:
+#         return 3072
+#     if "text-embedding-ada-002" in normalized:
+#         return 1536
+#     if "all-minilm-16-v2" in normalized:
+#         return 384
+#     raise ValueError(f"Unsupported embedding model: {name}") 
+
+# def get_embedding():
+#     global _embeddings
+#     if _embeddings is None:
+#         if not settings.openai_api_key:
+#             raise RuntimeError("OpenAI API key is not configured")
+#         _embeddings = OpenAIEmbeddings(
+#             openai_api_key=settings.openai_api_key,
+#             model=settings.embedding_model
+#         )
+#     return _embeddings
 
 def get_embedding():
     global _embeddings
+
     if _embeddings is None:
-        if not settings.openai_api_key:
-            raise RuntimeError("OpenAI API key is not configured")
-        _embeddings = OpenAIEmbeddings(
-            openai_api_key=settings.openai_api_key,
-            model=settings.embedding_model
+        _embeddings = HuggingFaceEmbeddings(
+            model_name="sentence-transformers/all-MiniLM-L6-v2"
         )
+
     return _embeddings
+
 
 def ensure_index():
     # checking setting class contain pinecone api key or not
@@ -78,6 +93,29 @@ def ensure_index():
 
     return pc.Index(settings.pinecone_index_name)
 
+#  create and return a pinecone vectore store connection ,avoid creating a new vector store connection every time the function is called
+def get_vectorstore():
+    global _vectorstore
+    if _vectorstore is None:
+        index=ensure_index()
+        _vectorstore=PineconeVectorStore(
+            index=index,
+            embedding=get_embedding(),
+            namespace=settings.pinecone_namespace
+        )
+    return _vectorstore
+
+# retrieve relevant documents from the pinecone vectore database 
+
+ 
+def get_retriever():
+    vectorstore=get_vectorstore()
+    return vectorstore.as_retriever(search_kwargs={"k":settings.pinecone_retriever_k})
+
+# add relevant documents to the pinecone vectore database
+def add_documents(chunks):
+    store=get_vectorstore()
+    return store.add_documents(chunks)
 
 
 
