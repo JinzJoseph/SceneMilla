@@ -1,10 +1,16 @@
 import time
 from pinecone import Pinecone , ServerlessSpec
-
+from dotenv import load_dotenv
+import os
 from app.core.config import get_settings
 from langchain_openai import OpenAIEmbeddings
 from langchain_pinecone import PineconeVectorStore
 from langchain_huggingface import HuggingFaceEmbeddings
+
+load_dotenv()
+
+pinecone_api_key = os.getenv("PINECONE_API_KEY")
+
 settings=get_settings()
 
 _embeddings=None
@@ -49,24 +55,27 @@ def get_embedding_dimensions():
 #         )
 #     return _embeddings
 
+_embeddings = None
+
 def get_embedding():
     global _embeddings
 
     if _embeddings is None:
         _embeddings = HuggingFaceEmbeddings(
-            model_name="sentence-transformers/all-MiniLM-L6-v2"
+            model_name="sentence-transformers/all-MiniLM-L6-v2",
+            model_kwargs={"device": "cpu"},
+            encode_kwargs={"normalize_embeddings": True}
         )
 
     return _embeddings
 
-
 def ensure_index():
     # checking setting class contain pinecone api key or not
-    if not settings.pinecone_api_key:
+    if not pinecone_api_key:
         raise RuntimeError("PINECONE_API_KEY is missing")
 # getting the dimension of the embedding model and creating a pinecone index if it does not exist
     desired_dimension = get_embedding_dimensions()
-    pc = Pinecone(api_key=settings.pinecone_api_key)
+    pc = Pinecone(api_key=pinecone_api_key)
     # getting the indexing name from pinecone
     names = [x["name"] for x in pc.list_indexes()]
 # index  doesnt exists in pinecone ,it creates one with the specified dimension and metric 
@@ -110,7 +119,7 @@ def get_vectorstore():
  
 def get_retriever():
     vectorstore=get_vectorstore()
-    return vectorstore.as_retriever(search_kwargs={"k":settings.pinecone_retriever_k})
+    return vectorstore.as_retriever(search_kwargs={"k":settings.max_retries})
 
 # add relevant documents to the pinecone vectore database
 def add_documents(chunks):

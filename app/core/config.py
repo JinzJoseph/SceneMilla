@@ -8,9 +8,7 @@ BASE_DIR=Path(__file__).resolve().parents[2]
 class Settings(BaseSettings):
     app_name: str = "SceneMilla "
     app_env: str = "development"
-    groq_api_key: str = ""
-    tavily_api_key: str = ""
-    pinecone_api_key: str = ""
+   
     pinecone_index_name: str = "scenemilla"
     pinecone_namespace: str = "company-it-kb"
     embedding_model: str = "text-embedding-3-small"

@@ -6,6 +6,8 @@ from langgraph.graph import StateGraph, START, END
 from app.core.config import get_settings
 from app.rag.state import AgentState, RouteDecision, EvidenceGrade
 from app.rag.vectorestore import get_retriever
+from dotenv import load_dotenv
+import os
 from langchain_groq import ChatGroq
 logger = logging.getLogger(__name__)
 settings = get_settings()
@@ -13,19 +15,20 @@ settings = get_settings()
 _llm = None
 _web_search = None
 
+
+load_dotenv()
+groq_api_key = os.getenv("groq_api_key")
+tavily_api_key = os.getenv("TAVILY_API_KEY")
+
+
+
 def llm():
     global _llm
     if _llm is None:
-        if not settings.openai_api_key:
-            raise RuntimeError("OPENAI_API_KEY is missing")
-        # _llm = ChatOpenAI(
-        #     model=settings.openai_model,
-        #     temperature=0,
-        #     api_key=settings.openai_api_key,
-        # )
+        
         _llm = ChatGroq(
             model="openai/gpt-oss-20b",
-            api_key="settings.groq_api_key",
+            api_key=groq_api_key,
             temperature=0
 )
     return _llm
@@ -33,10 +36,10 @@ def llm():
 def web_search_tool():
     global _web_search
     if _web_search is None:
-        if not settings.tavily_api_key:
+        if not tavily_api_key:
             raise RuntimeError("TAVILY_API_KEY is missing")
         _web_search = TavilySearch(
-            tavily_api_key=settings.tavily_api_key,
+            tavily_api_key=tavily_api_key,
             max_results=5,
             topic="general",
             include_answer=True,
